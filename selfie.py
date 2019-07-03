@@ -5,6 +5,8 @@ import imutils
 import pygame
 from pygame.locals import *
 
+import datetime
+
 WAITING_FOR_START = 0
 WAITING_FOR_PHOTO_1 = 1
 WAITING_FOR_PHOTO_2 = 2
@@ -47,6 +49,11 @@ def soundDone():
 		ret, image2 = camera2.read()
 		image2 = getSurfaceFromFrame(imutils.rotate_bound(image2, 90))
 
+		# Save both images with timestamp
+		timeString = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+		cv2.imwrite(timeString + '-image1.png', image1)
+		cv2.imwrite(timeString + '-image2.png', image2)
+
 		# Play summary sound
 		pygame.mixer.music.load(sounds[language][2])
 		pygame.mixer.music.play()
@@ -72,12 +79,13 @@ clock = pygame.time.Clock()
 while isGameRunning:
 	screen.fill([0,0,0])
 
-	if state == SUMMARY:
+	if image1 is not None and image2 is not None:
 		spaceX = (screen.get_width() - 2 * image1.get_width()) // 3
 		spaceY = (screen.get_height() - image1.get_height()) // 2
 		screen.blit(image1, (spaceX, spaceY))
 		screen.blit(image2, (spaceX * 2 + image1.get_width(), spaceY))
-	elif state == WAITING_FOR_PHOTO_1 or state == WAITING_FOR_PHOTO_2:
+
+	if state == WAITING_FOR_PHOTO_1 or state == WAITING_FOR_PHOTO_2:
 		if not pygame.mixer.music.get_busy():
 			soundDone()
 
