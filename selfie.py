@@ -20,13 +20,15 @@ pygame.init()
 pygame.mouse.set_visible(False)
 
 camera1 = cv2.VideoCapture(0)
-camera2 = cv2.VideoCapture(1)
+camera2 = cv2.VideoCapture(2)
 
 screen = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
 
 state = WAITING_FOR_START
 
 language = None
+currImage1 = None
+currImage2 = None
 image1 = None
 image2 = None
 imageSurface1 = None
@@ -36,7 +38,7 @@ timer = None
 
 cameraEffect = pygame.mixer.Sound('assets/camera.ogg')
 
-sounds = { 
+sounds = {
 	'en': ['assets/E1.ogg', 'assets/E2.ogg', 'assets/E3.ogg'],
 	'he': ['assets/H1.ogg', 'assets/H2.ogg', 'assets/H3.ogg'],
 	'ar': ['assets/A1.ogg', 'assets/A2.ogg', 'assets/A3.ogg']
@@ -59,21 +61,21 @@ def moveNext():
 		state = SUMMARY
 
 def soundDone():
-	global state, image1, image2, imageSurface1, imageSurface2, timer
+	global state, image1, image2, imageSurface1, imageSurface2, timer, camera1, camera2
 
 	if state == WAITING_FOR_PHOTO_1:
 		# Take picture
-		ret, image1 = camera1.read()
+		image1 = currImage1.copy()
 		cameraEffect.play()
 		timer = Timer(DELAY_BETWEEN_SOUNDS, moveNext)
-		
+
 	elif state == WAITING_FOR_PHOTO_2:
 		# Take picture
-		ret, image2 = camera2.read()
+		image2 = currImage2.copy()
 		cameraEffect.play()
 
-		imageSurface1 = getSurfaceFromFrame(imutils.rotate_bound(image1, 90))
-		imageSurface2 = getSurfaceFromFrame(imutils.rotate_bound(image2, 90))
+		imageSurface1 = getSurfaceFromFrame(imutils.rotate_bound(image1, 270))
+		imageSurface2 = getSurfaceFromFrame(imutils.rotate_bound(image2, 270))
 
 		# Save both images with timestamp
 		timeString = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
@@ -103,13 +105,16 @@ clock = pygame.time.Clock()
 lastTime = pygame.time.get_ticks()
 
 while isGameRunning:
+	ret1, currImage1 = camera1.read()
+	ret2, currImage2 = camera2.read()
+
 	screen.fill([0,0,0])
 
 	if imageSurface1 is not None and imageSurface2 is not None:
 		spaceX = (screen.get_width() - 2 * imageSurface1.get_width()) // 3
 		spaceY = (screen.get_height() - imageSurface1.get_height()) // 2
-		screen.blit(imageSurface1, (spaceX, spaceY))
-		screen.blit(imageSurface2, (spaceX * 2 + imageSurface1.get_width(), spaceY))
+		screen.blit(imageSurface2, (spaceX, spaceY))
+		screen.blit(imageSurface1, (spaceX * 2 + imageSurface1.get_width(), spaceY))
 
 	currTime = pygame.time.get_ticks()
 	dt = (currTime - lastTime) / 1000
