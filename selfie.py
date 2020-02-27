@@ -10,11 +10,11 @@ from common.Timer import Timer
 import datetime
 
 DELAY_BETWEEN_SOUNDS = 1
+DELAY_UNTIL_PICTURES_SHOW = 0.3
 
 WAITING_FOR_START = 0
-WAITING_FOR_PHOTO_1 = 1
-WAITING_FOR_PHOTO_2 = 2
-SUMMARY = 3
+WAITING_FOR_PHOTO = 1
+SUMMARY = 2
 
 pygame.init()
 pygame.mouse.set_visible(False)
@@ -39,9 +39,9 @@ timer = None
 cameraEffect = pygame.mixer.Sound('assets/camera.ogg')
 
 sounds = {
-	'en': ['assets/E1.ogg', 'assets/E2.ogg', 'assets/E3.ogg'],
-	'he': ['assets/H1.ogg', 'assets/H2.ogg', 'assets/H3.ogg'],
-	'ar': ['assets/A1.ogg', 'assets/A2.ogg', 'assets/A3.ogg']
+	'en': ['assets/E1.ogg', 'assets/E2.ogg'],
+	'he': ['assets/H1.ogg', 'assets/H2.ogg'],
+	'ar': ['assets/A1.ogg', 'assets/A2.ogg']
 }
 
 def moveNext():
@@ -49,40 +49,35 @@ def moveNext():
 
 	timer = None
 
-	if state == WAITING_FOR_PHOTO_1:
+	if state == WAITING_FOR_PHOTO:
 		# Play second sound
 		pygame.mixer.music.load(sounds[language][1])
 		pygame.mixer.music.play()
-		state = WAITING_FOR_PHOTO_2
-	elif state == WAITING_FOR_PHOTO_2:
-		# Play summary sound
-		pygame.mixer.music.load(sounds[language][2])
-		pygame.mixer.music.play()
 		state = SUMMARY
+
+def showPictures():
+	global imageSurface1, imageSurface2, timer
+
+	imageSurface1 = getSurfaceFromFrame(imutils.rotate_bound(image1, 270))
+	imageSurface2 = getSurfaceFromFrame(imutils.rotate_bound(image2, 270))
+
+	# Save both images with timestamp
+	timeString = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+	cv2.imwrite('images/' + timeString + '-image1.png', image1)
+	cv2.imwrite('images/' + timeString + '-image2.png', image2)
+
+	timer = Timer(DELAY_BETWEEN_SOUNDS, moveNext)
 
 def soundDone():
 	global state, image1, image2, imageSurface1, imageSurface2, timer, camera1, camera2
 
-	if state == WAITING_FOR_PHOTO_1:
-		# Take picture
+	if state == WAITING_FOR_PHOTO:
+		# Take pictures
 		image1 = currImage1.copy()
-		cameraEffect.play()
-		timer = Timer(DELAY_BETWEEN_SOUNDS, moveNext)
-
-	elif state == WAITING_FOR_PHOTO_2:
-		# Take picture
 		image2 = currImage2.copy()
 		cameraEffect.play()
 
-		imageSurface1 = getSurfaceFromFrame(imutils.rotate_bound(image1, 270))
-		imageSurface2 = getSurfaceFromFrame(imutils.rotate_bound(image2, 270))
-
-		# Save both images with timestamp
-		timeString = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-		cv2.imwrite('images/' + timeString + '-image1.png', image1)
-		cv2.imwrite('images/' + timeString + '-image2.png', image2)
-
-		timer = Timer(DELAY_BETWEEN_SOUNDS, moveNext)
+		timer = Timer(DELAY_UNTIL_PICTURES_SHOW, showPictures)
 
 def getSurfaceFromFrame(frame):
 	frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -94,7 +89,7 @@ def startGame():
 	global state, timer
 
 	timer = None
-	state = WAITING_FOR_PHOTO_1
+	state = WAITING_FOR_PHOTO
 	isGameRunning = False
 	pygame.mixer.music.load(sounds[language][0])
 	pygame.mixer.music.play()
@@ -122,7 +117,7 @@ while isGameRunning:
 
 	if timer is not None:
 		timer.tick(dt)
-	elif state == WAITING_FOR_PHOTO_1 or state == WAITING_FOR_PHOTO_2:
+	elif state == WAITING_FOR_PHOTO:
 		if not pygame.mixer.music.get_busy():
 			soundDone()
 
