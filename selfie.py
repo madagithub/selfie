@@ -76,8 +76,8 @@ def showPictures():
 
 	# Save both images with timestamp
 	timeString = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-	cv2.imwrite('images/' + timeString + '-image1.png', image1)
-	cv2.imwrite('images/' + timeString + '-image2.png', image2)
+	image = np.concatenate((image1, image2), axis=1)
+	cv2.imwrite('images/' + timeString + '-image.png', image)
 
 	timer = Timer(DELAY_BETWEEN_SOUNDS, moveNext)
 
@@ -86,15 +86,13 @@ def soundDone():
 
 	if state == WAITING_FOR_PHOTO:
 		# Take pictures
-		image1 = currImage1.copy()
-		image2 = currImage2.copy()
+		image1 = imutils.rotate_bound(currImage1.copy(), 270)
+		image2 = imutils.rotate_bound(currImage2.copy(), 270)
 		cameraEffect.play()
 
 		timer = Timer(DELAY_UNTIL_PICTURES_SHOW, showPictures)
 
 def getSurfaceFromFrame(frame):
-	frame = imutils.rotate_bound(frame, 270)
-
 	if frame.shape[1] > MAX_DISPLAY_DIMS[0] or frame.shape[0] > MAX_DISPLAY_DIMS[1]:
 		frame = cv2.resize(frame, MAX_DISPLAY_DIMS)
 
@@ -124,13 +122,12 @@ while isGameRunning:
 	screen.fill([0,0,0])
 
 	if imageSurface1 is not None and imageSurface2 is not None:
-		firstSpaceX = (screen.get_width() // 2 - imageSurface1.get_width()) // 2
+		firstSpaceX = (screen.get_width() // 2 - imageSurface1.get_width())
 		firstSpaceY = (screen.get_height() - imageSurface1.get_height()) // 2
 		screen.blit(imageSurface2, (firstSpaceX, firstSpaceY))
 
-		secondSpaceX = (screen.get_width() // 2 - imageSurface2.get_width()) // 2
 		secondSpaceY = (screen.get_height() - imageSurface2.get_height()) // 2
-		screen.blit(imageSurface1, (2 * firstSpaceX + imageSurface1.get_width() + secondSpaceX, secondSpaceY))
+		screen.blit(imageSurface1, (firstSpaceX + imageSurface1.get_width(), secondSpaceY))
 
 	currTime = pygame.time.get_ticks()
 	dt = (currTime - lastTime) / 1000
