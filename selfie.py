@@ -9,6 +9,13 @@ from common.Timer import Timer
 
 import datetime
 
+MAX_CAPTURE_WIDTH = 1920
+MAX_CAPTURE_HEIGHT = 1080
+
+SCREEN_WIDTH = 1920
+SCREEN_HEIGHT = 1080
+MAX_DISPLAY_DIMS = (int(MAX_CAPTURE_HEIGHT * (SCREEN_HEIGHT / MAX_CAPTURE_WIDTH)), SCREEN_HEIGHT)
+
 DELAY_BETWEEN_SOUNDS = 1
 DELAY_UNTIL_PICTURES_SHOW = 0.3
 
@@ -22,7 +29,13 @@ pygame.mouse.set_visible(False)
 camera1 = cv2.VideoCapture(0)
 camera2 = cv2.VideoCapture(2)
 
-screen = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
+camera1.set(cv2.CAP_PROP_FRAME_WIDTH, MAX_CAPTURE_WIDTH);
+camera1.set(cv2.CAP_PROP_FRAME_HEIGHT, MAX_CAPTURE_HEIGHT);
+
+camera2.set(cv2.CAP_PROP_FRAME_WIDTH, MAX_CAPTURE_WIDTH);
+camera2.set(cv2.CAP_PROP_FRAME_HEIGHT, MAX_CAPTURE_HEIGHT);
+
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
 
 state = WAITING_FOR_START
 
@@ -56,10 +69,10 @@ def moveNext():
 		state = SUMMARY
 
 def showPictures():
-	global imageSurface1, imageSurface2, timer
+	global image1, image2, imageSurface1, imageSurface2, timer
 
-	imageSurface1 = getSurfaceFromFrame(imutils.rotate_bound(image1, 270))
-	imageSurface2 = getSurfaceFromFrame(imutils.rotate_bound(image2, 270))
+	imageSurface1 = getSurfaceFromFrame(image1)
+	imageSurface2 = getSurfaceFromFrame(image2)
 
 	# Save both images with timestamp
 	timeString = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
@@ -80,6 +93,11 @@ def soundDone():
 		timer = Timer(DELAY_UNTIL_PICTURES_SHOW, showPictures)
 
 def getSurfaceFromFrame(frame):
+	frame = imutils.rotate_bound(frame, 270)
+
+	if frame.shape[1] > MAX_DISPLAY_DIMS[0] or frame.shape[0] > MAX_DISPLAY_DIMS[1]:
+		frame = cv2.resize(frame, MAX_DISPLAY_DIMS)
+
 	frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 	frame = np.fliplr(frame)
 	frame = np.rot90(frame)
@@ -106,10 +124,13 @@ while isGameRunning:
 	screen.fill([0,0,0])
 
 	if imageSurface1 is not None and imageSurface2 is not None:
-		spaceX = (screen.get_width() - 2 * imageSurface1.get_width()) // 3
-		spaceY = (screen.get_height() - imageSurface1.get_height()) // 2
-		screen.blit(imageSurface2, (spaceX, spaceY))
-		screen.blit(imageSurface1, (spaceX * 2 + imageSurface1.get_width(), spaceY))
+		firstSpaceX = (screen.get_width() // 2 - imageSurface1.get_width()) // 2
+		firstSpaceY = (screen.get_height() - imageSurface1.get_height()) // 2
+		screen.blit(imageSurface2, (firstSpaceX, firstSpaceY))
+
+		secondSpaceX = (screen.get_width() // 2 - imageSurface2.get_width()) // 2
+		secondSpaceY = (screen.get_height() - imageSurface2.get_height()) // 2
+		screen.blit(imageSurface1, (2 * firstSpaceX + imageSurface1.get_width() + secondSpaceX, secondSpaceY))
 
 	currTime = pygame.time.get_ticks()
 	dt = (currTime - lastTime) / 1000
