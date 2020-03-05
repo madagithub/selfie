@@ -1,2 +1,3 @@
 *.pyc
 images/*.png
+*.log

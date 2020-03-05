@@ -1,11 +1,14 @@
 import cv2
 import numpy as np
 import imutils
+import sys
+import traceback
 
 import pygame
 from pygame.locals import *
 
 from common.Timer import Timer
+from common.Log import Log
 
 import datetime
 
@@ -74,10 +77,14 @@ def showPictures():
 	imageSurface1 = getSurfaceFromFrame(image1)
 	imageSurface2 = getSurfaceFromFrame(image2)
 
+	Log.info('SHOW')
+
 	# Save both images with timestamp
 	timeString = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 	image = np.concatenate((image1, image2), axis=1)
 	cv2.imwrite('images/' + timeString + '-image.png', image)
+
+	Log.info('SAVED')
 
 	timer = Timer(DELAY_BETWEEN_SOUNDS, moveNext)
 
@@ -104,6 +111,8 @@ def getSurfaceFromFrame(frame):
 def startGame():
 	global state, timer
 
+	Log.info('START', language)
+
 	timer = None
 	state = WAITING_FOR_PHOTO
 	isGameRunning = False
@@ -114,47 +123,55 @@ isGameRunning = True
 clock = pygame.time.Clock()
 
 lastTime = pygame.time.get_ticks()
+Log.init('selfie.log', 'SELFIE')
+Log.info('INIT')
 
-while isGameRunning:
-	ret1, currImage1 = camera1.read()
-	ret2, currImage2 = camera2.read()
+try:
+	while isGameRunning:
+		ret1, currImage1 = camera1.read()
+		ret2, currImage2 = camera2.read()
 
-	screen.fill([0,0,0])
+		screen.fill([0,0,0])
 
-	if imageSurface1 is not None and imageSurface2 is not None:
-		firstSpaceX = (screen.get_width() // 2 - imageSurface1.get_width())
-		firstSpaceY = (screen.get_height() - imageSurface1.get_height()) // 2
-		screen.blit(imageSurface2, (firstSpaceX, firstSpaceY))
+		if imageSurface1 is not None and imageSurface2 is not None:
+			firstSpaceX = (screen.get_width() // 2 - imageSurface1.get_width())
+			firstSpaceY = (screen.get_height() - imageSurface1.get_height()) // 2
+			screen.blit(imageSurface2, (firstSpaceX, firstSpaceY))
 
-		secondSpaceY = (screen.get_height() - imageSurface2.get_height()) // 2
-		screen.blit(imageSurface1, (firstSpaceX + imageSurface1.get_width(), secondSpaceY))
+			secondSpaceY = (screen.get_height() - imageSurface2.get_height()) // 2
+			screen.blit(imageSurface1, (firstSpaceX + imageSurface1.get_width(), secondSpaceY))
 
-	currTime = pygame.time.get_ticks()
-	dt = (currTime - lastTime) / 1000
-	lastTime = currTime
+		currTime = pygame.time.get_ticks()
+		dt = (currTime - lastTime) / 1000
+		lastTime = currTime
 
-	if timer is not None:
-		timer.tick(dt)
-	elif state == WAITING_FOR_PHOTO:
-		if not pygame.mixer.music.get_busy():
-			soundDone()
+		if timer is not None:
+			timer.tick(dt)
+		elif state == WAITING_FOR_PHOTO:
+			if not pygame.mixer.music.get_busy():
+				soundDone()
 
-	for event in pygame.event.get():
-		if event.type == KEYDOWN:
-			if event.key == K_e:
-				language = 'en'
-				startGame()
-			elif event.key == K_h:
-				language = 'he'
-				startGame()
-			elif event.key == K_a:
-				language = 'ar'
-				startGame()
-			elif event.key == K_q:
-				isGameRunning = False
+		for event in pygame.event.get():
+			if event.type == KEYDOWN:
+				if event.key == K_e:
+					language = 'en'
+					startGame()
+				elif event.key == K_h:
+					language = 'he'
+					startGame()
+				elif event.key == K_a:
+					language = 'ar'
+					startGame()
+				elif event.key == K_q:
+					isGameRunning = False
+					Log.info('QUIT')
 
-	pygame.display.flip()
-	clock.tick(60)
+		pygame.display.flip()
+		clock.tick(60)
 
-pygame.quit()
-cv2.destroyAllWindows()
+	pygame.quit()
+	cv2.destroyAllWindows()
+except:
+	excType, excValue, excTraceback = sys.exc_info()
+	lines = traceback.format_exception(excType, excValue, excTraceback)
+	Log.error('\n'.join(lines))
