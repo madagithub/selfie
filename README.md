@@ -1,7 +1,8 @@
-# Captcha
+# Selfie
 
 ## General
-This exhibit instructs you to position your face in a well-defined position, then takes your picture from two separate cmeras and shows them side by side, and saves them locally.
+This exhibit instructs you to position your face in a well-defined position, then takes your picture from two separate cameras and shows them side by side, and saves them locally.
+
 Finally, it raises the question on why even though the picutres taken are of the same size, your nose appears larger in one of them, pondering on the effect of perspective.
 It is designed to work following a start button push for each language in a timely manner, which in turn simulate keyboard commands to the exhibit.
 
@@ -27,7 +28,7 @@ python3 selfie.py
 ```
 
 ## Log
-The exhibit supports a rotating log named captcha-dc.log in the root directory, that logs the following events:
+The exhibit supports a rotating log named selfie.log in the root directory, that logs the following events:
 * INIT (exhibit was started and initalization is done)
 * START|L (the exhibit was started in language L that can be en/he/ar)
 * SHOW (images taken were shown to the user)
@@ -47,9 +48,11 @@ Then, by having the start buttons simulate keyboard inputs, no special code is n
 
 The exhibit reacts to the following keyboard characters:
 
-The **h** key starts the exhibit in Hebrew.
-The **a** key starts the exhibit in Arabic.
-The **e** key starts the exhibit in English.
+The **'h'** key starts the exhibit in Hebrew.
+
+The **'a'** key starts the exhibit in Arabic.
+
+The **'e'** key starts the exhibit in English.
 
 Upon start, any previous running sequence stops immediately and the exhibit restarts.
 
@@ -57,6 +60,10 @@ Finally, a keyboard input of the **'q'** character quits the exhibit (this is in
 
 ## Image Saving
 Each pair of images taken is saved to the /images folder (from root exhibit dir) in one file, showing bot images side by side.
-The file name will consist of a time string shown as year-month-day-hour-minute-second-image.png format, with 4-digit for year and 2-digit for the rest. For example: 2023-03-15-14-45-30.png.
+
+The file name will consist of a time string shown as year-month-day-hour-minute-second-image.png format, with 4-digit for year and 2-digit for the rest.
+
+For example: 2023-03-15-14-45-30.png.
+
 The exhibit simply saves the images locally, it doesn't upload them or do any further processing with them.
 This is left for an offline process that suits the needs of the exhibit.
